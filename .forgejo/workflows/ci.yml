@@ -1,0 +1,17 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: docker
+    container: python:3.12
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install
+        run: pip install --quiet -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Test
+        run: pytest -q
