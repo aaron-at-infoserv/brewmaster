@@ -29,7 +29,7 @@ MAKER_SHARE = {
     "carol": 8,
     "erin": 10,
     "frank": 12,
-    # dave: none. He has not made a round in a very long time.
+    "dave": 3,  # all of them a long time ago
 }
 
 BISCUIT_COSTS = [0.0, 0.85, 0.0, 1.29, 0.99, 0.0, 1.15, 0.0, 0.79, 1.45]
