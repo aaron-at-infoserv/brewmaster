@@ -74,3 +74,17 @@ def next_brewer(conn: sqlite3.Connection, last_maker: str | None = None) -> str:
     while order[idx] == last_maker or debts[order[idx]] <= fair_share:
         idx = (idx + 1) % len(order)
     return order[idx]
+
+
+def start_new_quarter(conn: sqlite3.Connection) -> None:
+    """Clear the board down for a new quarter.
+
+    Last quarter's rounds do not carry over. Everyone starts level: the history
+    is wiped and each member is credited with one round for the team, so nobody
+    begins the quarter already in credit.
+    """
+    conn.execute("DELETE FROM drinkers")
+    conn.execute("DELETE FROM rounds")
+    conn.commit()
+    for name in member_names(conn):
+        record_round(conn, maker=name)
