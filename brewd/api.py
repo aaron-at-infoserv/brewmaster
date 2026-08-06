@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from brewd import ledger, rounds, store
-from brewd.members import add_member, all_members, get_member
+from brewd.members import add_member, all_members, get_member, purge_member
 
 DB_PATH = os.environ.get("BREWD_DB", ":memory:")
 
@@ -175,3 +175,10 @@ def whose_turn(last_maker: str | None = None):
         return {"next_brewer": rounds.next_brewer(conn, last_maker=last_maker)}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.delete("/members/{name}")
+def remove_member(name: str):
+    if not purge_member(conn, name):
+        raise HTTPException(status_code=404, detail="not on the register")
+    return {"removed": name}

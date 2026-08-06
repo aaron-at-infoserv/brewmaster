@@ -43,3 +43,24 @@ def all_members(conn: sqlite3.Connection) -> list[Member]:
 
 def member_names(conn: sqlite3.Connection) -> list[str]:
     return [m.name for m in all_members(conn)]
+
+
+def purge_member(conn: sqlite3.Connection, name: str) -> bool:
+    """Remove someone who has left the team.
+
+    Takes them off the register and clears them out of the rota so they stop
+    being nominated. Returns False if they were not on the register.
+    """
+    if get_member(conn, name) is None:
+        return False
+    conn.execute(
+        "DELETE FROM drinkers WHERE round_id IN "
+        "(SELECT id FROM rounds WHERE maker = ?)",
+        (name,),
+    )
+    conn.execute("DELETE FROM rounds WHERE maker = ?", (name,))
+    conn.execute("DELETE FROM drinkers WHERE member = ?", (name,))
+    conn.execute("DELETE FROM biscuit_balances WHERE member = ?", (name,))
+    conn.execute("DELETE FROM members WHERE name = ?", (name,))
+    conn.commit()
+    return True
