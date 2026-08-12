@@ -55,8 +55,13 @@ stop_proxy() {
     return 1
 }
 
+# LM_STUDIO_BASE_URL is how the room reaches the rented RunPod pod. FCC's
+# lmstudio slot is a plain OpenAI-compatible client carrying a fixed credential
+# ("lm-studio"), which is exactly the shape vLLM serves — so the pod goes in
+# that slot rather than needing a provider of its own. Start vLLM with
+# `--api-key lm-studio` and set MODEL=lmstudio/<served-model-name>.
 PROVIDER_VARS="GEMINI_API_KEY CEREBRAS_API_KEY GROQ_API_KEY OPENROUTER_API_KEY \
-               NVIDIA_NIM_API_KEY OLLAMA_BASE_URL"
+               NVIDIA_NIM_API_KEY OLLAMA_BASE_URL LM_STUDIO_BASE_URL"
 
 have_provider() {
     for var in $PROVIDER_VARS; do
