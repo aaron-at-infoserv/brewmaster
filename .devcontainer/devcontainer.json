@@ -1,0 +1,41 @@
+{
+  "name": "brewmaster",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "vscode",
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Prompted for when a codespace is created. One key each — never share one.
+  // https://build.nvidia.com/settings/api-keys
+  "secrets": {
+    "NVIDIA_NIM_API_KEY": {
+      "description": "Your own NVIDIA NIM key. Free, no card. Starts nvapi-.",
+      "documentationUrl": "https://build.nvidia.com/settings/api-keys"
+    },
+    "OPENROUTER_API_KEY": {
+      "description": "Optional second provider, so a mid-session switch is instant."
+    }
+  },
+
+  // Dependencies are already in the image, so this only wires up the editable
+  // install and never touches the network.
+  "postCreateCommand": "pip install --user --no-deps -e .",
+
+  // Best effort: bring the proxy up before anyone opens a terminal. If it
+  // fails, `.devcontainer/start-agent.sh` is the idempotent way to fix it.
+  "postStartCommand": "bash .devcontainer/start-agent.sh --proxy-only || true",
+
+  "forwardPorts": [8000, 8082],
+  "portsAttributes": {
+    "8000": { "label": "brewd API" },
+    "8082": { "label": "Free Claude Code admin" }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "charliermarsh.ruff"]
+    }
+  }
+}
