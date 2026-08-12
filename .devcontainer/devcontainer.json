@@ -7,15 +7,40 @@
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
-  // Prompted for when a codespace is created. One key each — never share one.
-  // https://build.nvidia.com/settings/api-keys
+  // The model the room is standardised on. Google AI Studio's free tier has the
+  // highest daily request ceiling of the free providers, and almost everyone
+  // already has a Google account - which is the step that actually blocks a
+  // room of twelve.
+  //
+  // Use the -latest alias, never a dated id. Google retires dated models "to
+  // new users", and on the day every participant is a new user - a dated id
+  // that works for whoever built this image fails for the whole room. It stays
+  // listed in /v1/models after retirement, so only a real generation call finds
+  // out.
+  //
+  // To switch provider live, re-run start-agent.sh with the
+  // model you want - the Admin UI is loopback-only and cannot be reached
+  // through a forwarded port:
+  //   MODEL=cerebras/llama-3.3-70b .devcontainer/start-agent.sh --restart
+  //
+  // FCC_ENV_FILE keeps the workshop's keys out of ~/.fcc/.env, which fcc owns
+  // and rewrites. It is set here rather than only in start-agent.sh so that a
+  // plain `fcc-claude` in a fresh terminal reads the same config the running
+  // proxy started from - a mismatch there surfaces as a 401 from the proxy.
+  "containerEnv": {
+    "MODEL": "gemini/gemini-flash-latest",
+    "FCC_ENV_FILE": "/home/vscode/.fcc/brewmaster.env"
+  },
+
+  // Prompted for when a codespace is created. One key each - never share one.
   "secrets": {
-    "NVIDIA_NIM_API_KEY": {
-      "description": "Your own NVIDIA NIM key. Free, no card. Starts nvapi-.",
-      "documentationUrl": "https://build.nvidia.com/settings/api-keys"
+    "GEMINI_API_KEY": {
+      "description": "Your own Google AI Studio key. Free, no card, works with a Google account.",
+      "documentationUrl": "https://aistudio.google.com/apikey"
     },
-    "OPENROUTER_API_KEY": {
-      "description": "Optional second provider, so a mid-session switch is instant."
+    "CEREBRAS_API_KEY": {
+      "description": "Optional second provider, so a mid-session switch is instant.",
+      "documentationUrl": "https://cloud.cerebras.ai"
     }
   },
 
@@ -30,7 +55,7 @@
   "forwardPorts": [8000, 8082],
   "portsAttributes": {
     "8000": { "label": "brewd API" },
-    "8082": { "label": "Free Claude Code admin" }
+    "8082": { "label": "Free Claude Code proxy (/admin is loopback-only)" }
   },
 
   "customizations": {
