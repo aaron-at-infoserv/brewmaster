@@ -101,6 +101,21 @@ else
     echo "!!   GEMINI_API_KEY=your-key .devcontainer/start-agent.sh --restart"
 fi
 
+# A missing pod URL is the likeliest day-of failure, and it fails badly: FCC
+# falls back to lmstudio's default of localhost:1234, so the first prompt dies
+# as a connection error three layers down rather than as anything a participant
+# could act on. Say it plainly here instead.
+case "${MODEL:-}" in
+    lmstudio/*)
+        if [ -z "${LM_STUDIO_BASE_URL:-}" ]; then
+            echo "!! MODEL is ${MODEL} but LM_STUDIO_BASE_URL is not set, so the"
+            echo "!! agent would try localhost instead of the workshop pod."
+            echo "!! Tell the facilitator. To carry on in the meantime:"
+            echo "!!   MODEL=gemini/gemini-flash-latest .devcontainer/start-agent.sh --restart"
+        fi
+        ;;
+esac
+
 if [ "$MODE" = "--restart" ] && proxy_is_up; then
     echo "stopping fcc-server..."
     stop_proxy
