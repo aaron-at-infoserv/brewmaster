@@ -7,39 +7,58 @@
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
-  // The model the room is standardised on. Google AI Studio's free tier has the
-  // highest daily request ceiling of the free providers, and almost everyone
-  // already has a Google account - which is the step that actually blocks a
-  // room of twelve.
+  // The model the room is standardised on: Qwen3-32B FP8, served by vLLM on a
+  // RunPod GPU rented for the session. FCC has no vLLM provider, but its
+  // lmstudio slot is a plain OpenAI-compatible client, which is exactly the
+  // shape vLLM serves - so the pod goes there. See docs/05-model-hosting.md in
+  // the facilitator repo.
   //
-  // Use the -latest alias, never a dated id. Google retires dated models "to
-  // new users", and on the day every participant is a new user - a dated id
-  // that works for whoever built this image fails for the whole room. It stays
-  // listed in /v1/models after retirement, so only a real generation call finds
-  // out.
+  // The endpoint itself arrives as the LM_STUDIO_BASE_URL Codespaces secret,
+  // set once on the repo by the facilitator. It is deliberately NOT baked in
+  // here: the URL contains the pod id, which changes whenever the pod is
+  // recreated, and a rebuild-to-change-a-URL is not something you want to
+  // discover at 09:05 on the day.
   //
-  // To switch provider live, re-run start-agent.sh with the
-  // model you want - the Admin UI is loopback-only and cannot be reached
-  // through a forwarded port:
-  //   MODEL=cerebras/llama-3.3-70b .devcontainer/start-agent.sh --restart
+  // FCC's lmstudio slot sends the fixed credential "lm-studio" and offers no
+  // way to configure it, so vLLM must be started with VLLM_API_KEY=lm-studio.
+  //
+  // CLAUDE_CODE_MAX_OUTPUT_TOKENS is not optional. Claude Code defaults to
+  // requesting 64000 output tokens, which any self-hosted model rejects with a
+  // 400 - vLLM enforces max_tokens + prompt_tokens <= max_model_len. Claude
+  // Code's own baseline prompt measures ~24.5K tokens, so serve the pod at
+  // 65536 context and cap output here.
+  //
+  // To switch provider live, re-run start-agent.sh with the model you want -
+  // the Admin UI is loopback-only and cannot be reached through a forwarded
+  // port. The zero-cost fallback if the pod dies:
+  //   MODEL=gemini/gemini-flash-latest .devcontainer/start-agent.sh --restart
   //
   // FCC_ENV_FILE keeps the workshop's keys out of ~/.fcc/.env, which fcc owns
   // and rewrites. It is set here rather than only in start-agent.sh so that a
   // plain `fcc-claude` in a fresh terminal reads the same config the running
   // proxy started from - a mismatch there surfaces as a 401 from the proxy.
   "containerEnv": {
-    "MODEL": "gemini/gemini-flash-latest",
+    "MODEL": "lmstudio/qwen3-32b",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "8192",
     "FCC_ENV_FILE": "/home/vscode/.fcc/brewmaster.env"
   },
 
-  // Prompted for when a codespace is created. One key each - never share one.
+  // Prompted for when a codespace is created. Both are now FALLBACK ONLY - the
+  // room runs on the shared pod, which needs no per-person key at all. Leave
+  // them blank and everything still works; fill one in and the 90-second
+  // switch below is available if the pod misbehaves.
+  //
+  // LM_STUDIO_BASE_URL is deliberately absent from this block. It is a
+  // repo-level Codespaces secret (Settings > Secrets and variables >
+  // Codespaces), so it is injected automatically without prompting anyone for
+  // a URL they have no way of knowing.
   "secrets": {
     "GEMINI_API_KEY": {
-      "description": "Your own Google AI Studio key. Free, no card, works with a Google account.",
+      "description": "Optional fallback. Your own Google AI Studio key - free, no card, works with a Google account.",
       "documentationUrl": "https://aistudio.google.com/apikey"
     },
     "CEREBRAS_API_KEY": {
-      "description": "Optional second provider, so a mid-session switch is instant.",
+      "description": "Optional third provider, so a mid-session switch is instant.",
       "documentationUrl": "https://cloud.cerebras.ai"
     }
   },
