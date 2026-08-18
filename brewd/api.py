@@ -3,11 +3,12 @@ from __future__ import annotations
 import os
 from datetime import UTC, datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel
 
 from brewd import ledger, rounds, store
 from brewd.members import add_member, all_members, get_member
+
 
 DB_PATH = os.environ.get("BREWD_DB", ":memory:")
 
@@ -19,7 +20,6 @@ class NewMember(BaseModel):
     name: str
     joined: str | None = None
     mug: str = "unknown"
-
 
 class NewRound(BaseModel):
     maker: str
@@ -36,7 +36,7 @@ def health():
 @app.get("/members")
 def list_members():
     return [
-        {"name": m.name, "joined": m.joined, "mug": m.mug} for m in all_members(conn)
+        {"name": m.name, "joined": m.joined, "mug": m.mug, "is_active": m.is_active} for m in all_members(conn)
     ]
 
 
@@ -46,7 +46,21 @@ def create_member(payload: NewMember):
         raise HTTPException(status_code=409, detail="already on the register")
     joined = payload.joined or datetime.now(UTC).date().isoformat()
     m = add_member(conn, payload.name, joined, payload.mug)
-    return {"name": m.name, "joined": m.joined, "mug": m.mug}
+    return {"name": m.name, "joined": m.joined, "mug": m.mug, "is_active": m.is_active}
+
+
+@app.post("/members/{name}/deactivate", status_code=200)
+def deactivate_member(name: str = Path(..., description="Name of the member to deactivate")):
+    member = get_member(conn, name)
+    if member is None:
+        raise HTTPException(status_code=404, detail=f"{name} is not on the register")
+    if not member.is_active:
+        raise HTTPException(status_code=400, detail=f"{name} is already inactive")
+
+    conn.execute("UPDATE members SET is_active = 0 WHERE name = ?", (name,))
+    conn.commit()
+
+    return {"name": name, "is_active": False}
 
 
 @app.post("/rounds", status_code=201)
@@ -58,7 +72,7 @@ def create_round(payload: NewRound):
     if get_member(conn, maker) is None:
         raise HTTPException(status_code=404, detail=f"{maker} is not on the register")
 
-    everyone = [m.name for m in all_members(conn)]
+    everyone = [m.name for m in all_members(conn, active_only=True)]
     if payload.drinkers is None:
         drinkers = everyone
         assumed = True

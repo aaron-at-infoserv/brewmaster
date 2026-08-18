@@ -8,7 +8,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS members (
     name   TEXT PRIMARY KEY,
     joined TEXT NOT NULL,
-    mug    TEXT NOT NULL DEFAULT 'unknown'
+    mug    TEXT NOT NULL DEFAULT 'unknown',
+    is_active BOOLEAN NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS rounds (
