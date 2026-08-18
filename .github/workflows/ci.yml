@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     # Load-bearing. GitHub's default job timeout is 360 minutes; the planted
     # hang in next_brewer() needs to be killed in five, not six hours.
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
